@@ -24,8 +24,24 @@ var updateControlMap = function(delta, now){//UPDATE CONTROL MAP
 };
 var updatePlayer = function(delta, now){
 	var self = this;		
-	if ( this.PG.entity){this.PG.entity.update(this.S.keys);}
+	if ( this.PG.entity){
+		this.PG.entity.update(this.S.keys, delta, now);
+		this.PG.entity.position.y = this.world.getHeight(this.PG.entity.position.x, this.PG.entity.position.z) +10;
+	}
+
 };
+var updateCamera = function(delta, now){
+	var self = this;		
+	//console.info(this.S.controls.getObject().position);
+	if (this.S.camera && this.PG.entity)
+	{	
+		this.S.camera.position.x = this.PG.entity.position.x;
+		this.S.camera.position.y = this.PG.entity.position.y;
+		this.S.camera.position.z = this.PG.entity.position.z;
+		//this.S.camera.lookAt(this.world.get('helper').position);
+	}
+};
+
 var updateInterception = function(delta, now){
 	var self = this;		
 	if ( this.world && this.world.intersect ){
@@ -37,17 +53,7 @@ var updateInterception = function(delta, now){
 		this.world.dig(this.world.intersect.obj);
 	}
 };
-var updateCamera = function(delta, now){
-	var self = this;		
-	//console.info(this.S.controls.getObject().position);
-	if (this.S.camera && this.PG.entity)
-	{	
-		this.S.camera.position.x = this.PG.entity.position.x;
-		this.S.camera.position.y = this.PG.entity.position.y;
-		this.S.camera.position.z = this.PG.entity.position.z;
-		this.S.camera.lookAt(this.world.get('helper').position);
-	}
-};
+
 
 
 var CgenApp = function (opts) {
@@ -66,8 +72,8 @@ var CgenApp = function (opts) {
 	this.updateFcts = [];		
 	this.updateFcts.push(updateControlMap);
 	this.updateFcts.push(updatePlayer);
-	//this.updateFcts.push(updateCamera);
-	this.updateFcts.push(updateInterception);
+	this.updateFcts.push(updateCamera);
+	//this.updateFcts.push(updateInterception);
 
 
 	//Three related stuff
@@ -92,7 +98,10 @@ CgenApp.prototype.initHardware = function (opts) {
 	
 	console.info("Application initialized", configuration.WIDTH, configuration.HEIGHT);
 	this.keyboard = new THREEx.KeyboardState();
-	this.S.scene = new THREE.Scene();
+	this.S.scene = new THREE.Scene();	
+	//this.S.scene.fog = new THREE.FogExp2( 0xefd1b5, 0.0025 );
+
+
 	this.S.camera = new THREE.PerspectiveCamera(
 								    configuration.VIEW_ANGLE,
 								    configuration.ASPECT,
@@ -101,10 +110,21 @@ CgenApp.prototype.initHardware = function (opts) {
 	this.S.renderer = new THREE.WebGLRenderer();
 	this.S.renderer.setSize(configuration.WIDTH, configuration.HEIGHT);
 
-	this.S.controls = new THREE.OrbitControls(this.S.camera, this.S.renderer.domElement);
-	this.S.controls.addEventListener( 'change', function () {
-		console.info('controls');
-	} );
+	//this.S.controls = new THREE.OrbitControls(this.S.camera, this.S.renderer.domElement);
+	//this.S.controls.addEventListener( 'change', function () {
+	//	console.info('controls');
+	//} );
+	this.S.controls = new THREE.FirstPersonControls(this.S.camera);
+    this.S.controls.lookSpeed = 0.1;
+    
+    this.S.controls.noFly = false;
+    this.S.controls.lookVertical = true;
+    this.S.controls.constrainVertical = false;
+    this.S.controls.verticalMin = 1.0;
+    this.S.controls.verticalMax = 2.0;
+    this.S.controls.lon = -150;
+    this.S.controls.lat = 120;
+	
 
 	
 	this.S.scene.add(this.S.camera);
@@ -117,15 +137,7 @@ CgenApp.prototype.initWorld = function(opts) {
 	//WORLD	
 	this.world = new WorldLoader(this).init();
 	this.S.scene.add( this.world.getRoot());	
-	var pointLight =
-	  new THREE.PointLight(0xFFFFFF);
-	// set its position
-	pointLight.position.x = 10;
-	pointLight.position.y = 50;
-	pointLight.position.z = 130;
-
-	// add to the scene
-	this.S.scene.add(pointLight);
+	
 
 	return this;
 };
@@ -136,6 +148,8 @@ CgenApp.prototype.start = function () {
 	this.S.camera.position.x = this.PG.entity.position.x;
 	this.S.camera.position.y = this.PG.entity.position.y;
 	this.S.camera.position.z = this.PG.entity.position.z;
+
+
 
 
 	this.loop();
@@ -158,7 +172,7 @@ CgenApp.prototype.loop = function() {
 		var deltaMsec	= Math.min(200, nowMsec - lastTimeMsec)
 		lastTimeMsec	= nowMsec
 		// call each update function
-		self.S.controls.update();
+		self.S.controls.update(deltaMsec/1000);
 		self.updateFcts.forEach(function(updateFn){
 			updateFn.bind(self)(deltaMsec/1000, nowMsec/1000)
 		});

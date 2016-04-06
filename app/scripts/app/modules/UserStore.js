@@ -1,7 +1,7 @@
 var _position = {
-		x:0, 
-		y:2000, 
-		z:2000
+		x:5000, 
+		y:5000, 
+		z:5000
 };
 
 var UserStore = function(userId){
@@ -13,7 +13,7 @@ UserStore.prototype.get = function() {
 		position: _position,
 		userId: this.userId,
 		userName: 'gurbano',
-		update: function (controls) {
+		update: function (controls, delta, now) {
 			//console.info(controls);
 		}
 
@@ -28,3 +28,5 @@ UserStore.prototype.set = function(data) {
 
 
 module.exports = UserStore;
+
+
