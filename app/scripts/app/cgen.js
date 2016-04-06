@@ -46,9 +46,9 @@ var updateInterception = function(delta, now){
 	var self = this;		
 	if ( this.world && this.world.intersect ){
 		//console.info(this.world.intersect);
-		var helper = this.world.get('axisHelper');
+		var helper = this.world.get('light');
 		helper.position.x = this.world.intersect.x;
-		helper.position.y = this.world.intersect.y;
+		helper.position.y = this.world.intersect.y+5000;
 		helper.position.z = this.world.intersect.z;
 		this.world.dig(this.world.intersect.obj);
 	}
@@ -71,9 +71,9 @@ var CgenApp = function (opts) {
 	//UPDATERS
 	this.updateFcts = [];		
 	this.updateFcts.push(updateControlMap);
-	this.updateFcts.push(updatePlayer);
-	this.updateFcts.push(updateCamera);
-	//this.updateFcts.push(updateInterception);
+	//this.updateFcts.push(updatePlayer);
+	//this.updateFcts.push(updateCamera);
+	this.updateFcts.push(updateInterception);
 
 
 	//Three related stuff
@@ -109,12 +109,14 @@ CgenApp.prototype.initHardware = function (opts) {
 								    configuration.FAR);
 	this.S.renderer = new THREE.WebGLRenderer();
 	this.S.renderer.setSize(configuration.WIDTH, configuration.HEIGHT);
+	this.S.renderer.gammaInput = true;
+	this.S.renderer.gammaOutput = true;
 
-	//this.S.controls = new THREE.OrbitControls(this.S.camera, this.S.renderer.domElement);
-	//this.S.controls.addEventListener( 'change', function () {
-	//	console.info('controls');
-	//} );
-	this.S.controls = new THREE.FirstPersonControls(this.S.camera);
+	this.S.controls = new THREE.OrbitControls(this.S.camera, this.S.renderer.domElement);
+	this.S.controls.addEventListener( 'change', function () {
+		console.info('controls');
+	} );
+	/*this.S.controls = new THREE.FirstPersonControls(this.S.camera);
     this.S.controls.lookSpeed = 0.1;
     
     this.S.controls.noFly = false;
@@ -124,7 +126,7 @@ CgenApp.prototype.initHardware = function (opts) {
     this.S.controls.verticalMax = 2.0;
     this.S.controls.lon = -150;
     this.S.controls.lat = 120;
-	
+	*/
 
 	
 	this.S.scene.add(this.S.camera);

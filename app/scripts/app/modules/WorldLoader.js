@@ -32,12 +32,20 @@ var World = function (app) {
 	}	
 	
 	this.entities = {};	
+	var light = new THREE.DirectionalLight(0xffffff, 1.0);
+	light.position.set(3200, 39000, 70000);
+	this.add('light', light);
 	this.add('axisHelper', new THREE.AxisHelper( 500 ) );	
 	this.add('terrain',this.getTerrain());
 	this.add('helper', getHelper());
 
+
+
+
 	document.addEventListener( 'mousemove', onMouseMove.bind(this), false);
 }
+
+
 var FAR = 100000000;
 World.prototype.getHeight = function(x,z) {
 	this.raycaster.raycaster = new THREE.Raycaster(
@@ -107,7 +115,7 @@ var worldWidth = 256;
 var worldDepth = 256;
 World.prototype.getTerrainGeometry = function(data) {
 	if (!this.geometry){		
-		var geometry = new THREE.PlaneGeometry( 128000, 128000, worldWidth - 1, worldDepth - 1 );
+		var geometry = new THREE.PlaneGeometry( 256000, 256000, worldWidth - 1, worldDepth - 1 );
 		geometry.rotateX( - Math.PI / 2 );
 		var vertices = geometry.attributes ? geometry.attributes.position.array : geometry.vertices;	
 		if (geometry.attributes ){ //NOT THIS ONE
@@ -116,7 +124,7 @@ World.prototype.getTerrainGeometry = function(data) {
 			}
 		}else{//THIS ONE
 			for (var i = 0; i < vertices.length; i++) {
-				vertices[i].y=(data[i]*60) ;
+				vertices[i].y=(data[i]*160) ;
 			};
 		}
 		/**/		
@@ -126,16 +134,28 @@ World.prototype.getTerrainGeometry = function(data) {
 	}
 	return this.geometry;
 }
-World.prototype.getTerrainMaterial = function(data) {
-	//var texture = new THREE.CanvasTexture( generateTexture( data, worldWidth, worldDepth ) );
-	//texture.wrapS = THREE.ClampToEdgeWrapping;
-	//texture.wrapT = THREE.ClampToEdgeWrapping;
-	var texture = new THREE.TextureLoader().load( "/images/textures/grass01.jpg" );
-	texture.wrapS = THREE.RepeatWrapping;
-	texture.wrapT = THREE.RepeatWrapping;
-	//texture.repeat.set( 4, 4 );		
 
-	return new THREE.MeshBasicMaterial( { map: texture, wireframe: false } ) ;
+
+
+function createShaderMaterial(id, light) {
+	var shader = THREE.ShaderTypes[id];
+	var u = THREE.UniformsUtils.clone(shader.uniforms);
+	var vs = shader.vertexShader;
+	var fs = shader.fragmentShader;
+	var material = new THREE.ShaderMaterial({ uniforms: u, vertexShader: vs, fragmentShader: fs });
+	material.uniforms.uDirLightPos.value = light.position;
+	material.uniforms.uDirLightColor.value = light.color;
+	return material;
+}
+World.prototype.getTerrainMaterial = function(data) {
+	// MATERIALS
+	var materialColor = new THREE.Color();
+	materialColor.setRGB(1.0, 0.8, 0.6);
+	var phongMaterial = createShaderMaterial("phongDiffuse", this.get('light'));
+	phongMaterial.uniforms.uMaterialColor.value.copy(materialColor);
+	phongMaterial.side = THREE.DoubleSide;
+
+	return phongMaterial;
 }
 
 World.prototype.getTerrain = function() {
@@ -214,3 +234,83 @@ function generateTexture( data, width, height ) {
 }
 
 module.exports = WorldLoader;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+THREE.ShaderTypes = {
+	'phongDiffuse' : {
+		uniforms: {
+			"uDirLightPos":	{ type: "v3", value: new THREE.Vector3() },
+			"uDirLightColor": { type: "c", value: new THREE.Color( 0xffffff ) },
+			"uMaterialColor":  { type: "c", value: new THREE.Color( 0xffffff ) },
+			uKd: {
+				type: "f",
+				value: 0.7
+			},
+			uBorder: {
+				type: "f",
+				value: 0.4
+			}
+		},
+		vertexShader: [
+			"varying vec3 vNormal;",
+			"varying vec3 vViewPosition;",
+			"void main() {",
+				"gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+				"vNormal = normalize( normalMatrix * normal );",
+				"vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );",
+				"vViewPosition = -mvPosition.xyz;",
+
+			"}"
+
+		].join("\n"),
+
+		fragmentShader: [
+
+			"uniform vec3 uMaterialColor;",
+
+			"uniform vec3 uDirLightPos;",
+			"uniform vec3 uDirLightColor;",
+
+			"uniform float uKd;",
+			"uniform float uBorder;",
+
+			"varying vec3 vNormal;",
+			"varying vec3 vViewPosition;",
+
+			"void main() {",
+
+				// compute direction to light
+				"vec4 lDirection = viewMatrix * vec4( uDirLightPos, 0.0 );",
+				"vec3 lVector = normalize( lDirection.xyz );",
+
+				// diffuse: N * L. Normal must be normalized, since it's interpolated.
+				"vec3 normal = normalize( vNormal );",
+				//was: "float diffuse = max( dot( normal, lVector ), 0.0);",
+				// solution
+				"float diffuse = dot( normal, lVector );",
+				"if ( diffuse > 0.6 ) { diffuse = 1.0; }",
+				"else if ( diffuse > -0.2 ) { diffuse = 0.7; }",
+				"else { diffuse = 0.3; }",
+
+				"gl_FragColor = vec4( uKd * uMaterialColor * uDirLightColor * diffuse, 1.0 );",
+
+			"}"
+
+		].join("\n")
+
+	}
+
+};
