@@ -6,7 +6,7 @@ var keyMap =['left', 'right', 'up', 'down'];
 var configuration = {
 	VIEW_ANGLE : 45,
   	NEAR : 0.1,
-  	FAR : 10000
+  	FAR : 1000000
 }
 
 var UP = THREE.Vector3( 1, 0, 0 );
@@ -66,7 +66,7 @@ var CgenApp = function (opts) {
 	this.updateFcts = [];		
 	this.updateFcts.push(updateControlMap);
 	this.updateFcts.push(updatePlayer);
-	this.updateFcts.push(updateCamera);
+	//this.updateFcts.push(updateCamera);
 	this.updateFcts.push(updateInterception);
 
 
@@ -98,25 +98,18 @@ CgenApp.prototype.initHardware = function (opts) {
 								    configuration.ASPECT,
 								    configuration.NEAR,
 								    configuration.FAR);
+	this.S.renderer = new THREE.WebGLRenderer();
+	this.S.renderer.setSize(configuration.WIDTH, configuration.HEIGHT);
 
-	//INIT CONTROLS
-	/*var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
-	if ( havePointerLock ) {
-		this.S.controls =  new THREE.PointerLockControls( this.S.camera );		
-		//this.S.scene.add(this.S.controls.getObject());
-		this.plContext = new PlContext(this.S.controls);
-		this.target.click(function () {
-			self.plContext.start();
-		});		
-	}*/
-
-
+	this.S.controls = new THREE.OrbitControls(this.S.camera, this.S.renderer.domElement);
+	this.S.controls.addEventListener( 'change', function () {
+		console.info('controls');
+	} );
 
 	
 	this.S.scene.add(this.S.camera);
 
-	this.S.renderer = new THREE.WebGLRenderer();
-	this.S.renderer.setSize(configuration.WIDTH, configuration.HEIGHT);
+	
 	this.target.append(this.S.renderer.domElement);
 	return this;
 }
@@ -138,6 +131,13 @@ CgenApp.prototype.initWorld = function(opts) {
 };
 CgenApp.prototype.start = function () {
 	console.info("Application started");
+
+
+	this.S.camera.position.x = this.PG.entity.position.x;
+	this.S.camera.position.y = this.PG.entity.position.y;
+	this.S.camera.position.z = this.PG.entity.position.z;
+
+
 	this.loop();
 	return this;
 };
@@ -148,6 +148,7 @@ CgenApp.prototype.queryControls = function(key){
 CgenApp.prototype.loop = function() {
 	var self = this;
 	var lastTimeMsec= null
+	
 	function animate(nowMsec){
 		//nowMsec = nowMsec.toFixed(0);
 		//console.info('looping ' + nowMsec);		
@@ -157,10 +158,11 @@ CgenApp.prototype.loop = function() {
 		var deltaMsec	= Math.min(200, nowMsec - lastTimeMsec)
 		lastTimeMsec	= nowMsec
 		// call each update function
+		self.S.controls.update();
 		self.updateFcts.forEach(function(updateFn){
 			updateFn.bind(self)(deltaMsec/1000, nowMsec/1000)
 		});
-		this.S.renderer.render(this.S.scene, this.S.camera);
+		self.S.renderer.render(self.S.scene, self.S.camera);
 	}
 	requestAnimationFrame(animate.bind(self));
 };
@@ -168,6 +170,20 @@ module.exports = CgenApp;
 
 
 
+
+
+
+//INIT CONTROLS
+/*
+	var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+	if ( havePointerLock ) {
+		this.S.controls =  new THREE.PointerLockControls( this.S.camera );		
+		//this.S.scene.add(this.S.controls.getObject());
+		this.plContext = new PlContext(this.S.controls);
+		this.target.click(function () {
+			self.plContext.start();
+		});		
+	}
 
 var PlContext = function(controls){
 	var element = document.body;
@@ -187,7 +203,7 @@ var PlContext = function(controls){
 				//controlsEnabled = true;
 				controls.enabled = true;			
 			} else {
-				controls.enabled = false;
+				//controls.enabled = false;
 				console.warn('no pointerlock');	
 			}
 
@@ -217,4 +233,4 @@ var PlContext = function(controls){
 		}
 	}
 }
-
+*/

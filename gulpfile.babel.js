@@ -119,6 +119,12 @@ gulp.task('fonts', () => {
     .pipe(gulp.dest('.tmp/fonts'))
     .pipe(gulp.dest('dist/fonts'));
 });
+gulp.task('audio', () => {
+  return gulp.src('app/audio/**/*')
+    .pipe(gulp.dest('.tmp/audio'))
+    .pipe(gulp.dest('dist/audio'));
+});
+
 
 gulp.task('extras', () => {
   return gulp.src([

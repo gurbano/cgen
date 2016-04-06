@@ -1,3 +1,6 @@
+var ImprovedNoise = require('../dep/ImprovedNoise');
+
+
 var WorldLoader = function(parent){
 	this.parent = parent; //parent app
 }
@@ -23,7 +26,7 @@ var World = function (app) {
 	this.add('axisHelper', new THREE.AxisHelper( 500 ) );	
 	this.add('terrain',this.getTerrain());
 	this.add('helper', getHelper());
-	document.addEventListener( 'mousemove', onMouseMove.bind(this), false);
+	//document.addEventListener( 'mousemove', onMouseMove.bind(this), false);
 }
 World.prototype.add = function(id, obj) {
 	this.map[id] = obj;
@@ -113,12 +116,12 @@ var onMouseMove = function(event) {
 	}
 };
 
-var worldWidth = 1024;
-var worldDepth = 1024;
+var worldWidth = 256;
+var worldDepth = 256;
 World.prototype.getTerrainGeometry = function() {
 	if (!this.geometry){
 		var data = generateHeight( worldWidth, worldDepth );
-		var geometry = new THREE.PlaneGeometry( 1000, 1000, worldWidth - 1, worldDepth - 1 );
+		var geometry = new THREE.PlaneGeometry( 128000, 128000, worldWidth - 1, worldDepth - 1 );
 		geometry.rotateX( - Math.PI / 2 );
 		/*var vertices = geometry.attributes.position.array;	
 		for ( var i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
