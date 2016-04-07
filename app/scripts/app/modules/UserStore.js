@@ -1,7 +1,7 @@
 var _position = {
-		x:5000, 
-		y:50000, 
-		z:5000
+		x:100, 
+		y:500, 
+		z:100
 };
 
 var UserStore = function(userId){

@@ -1,5 +1,6 @@
 var ImprovedNoise = require('../dep/ImprovedNoise');
-
+var PlanetFactory = require('./factories/PlanetFactory');
+var helper = require('../helper');
 
 
 var WorldLoader = function(parent){
@@ -32,33 +33,15 @@ var World = function (app) {
 	}	
 	
 	this.entities = {};	
-	var light = new THREE.DirectionalLight(0xffffff, 1.0);
-	light.position.set(3200, 39000, 70000);
-	this.add('light', light);
-	this.add('axisHelper', new THREE.AxisHelper( 500 ) );	
-	this.add('terrain',this.getTerrain());
+	this.add('light', getLight());
 	this.add('helper', getHelper());
-
-
+	this.add('axisHelper', new THREE.AxisHelper( 5000 ) );	
+	this.add('earth', getEarth());
+	this.add('rome', getCity(41.890251, 12.492373));
 
 
 	document.addEventListener( 'mousemove', onMouseMove.bind(this), false);
 }
-
-
-var FAR = 100000000;
-World.prototype.getHeight = function(x,z) {
-	this.raycaster.raycaster = new THREE.Raycaster(
-									new THREE.Vector3( x, FAR, z ),//origin
-									new THREE.Vector3( 0, -1, 0 ),
-									);
-	var intersects = this.raycaster.raycaster.intersectObject(  this.get('terrain') );
-	if ( intersects.length > 0 ) {
-		return intersects[0].point.y;
-	}else{
-		return undefined;
-	}
-};
 
 World.prototype.add = function(id, obj) {
 	this.entities[id] = obj;
@@ -68,30 +51,54 @@ World.prototype.get = function(name) {
 	return this.entities[name];
 };
 
-World.prototype.dig = function(inter) {
-	var face = inter.face;
-    var geo = this.geometry;
-	
-    //vertex 1
-    var v1 = geo.vertices[face.a];
-    var v2 = geo.vertices[face.b];
-    var v3 = geo.vertices[face.c];
-    //console.info(v1, v2, v3);
-    v1.y +=1;
-    
-    
-	
-	//geo.attributes.position.array[face.a ] += 50;
-	geo.verticesNeedUpdate = true;
-	geo.normalsNeedUpdate = true;
-	geo.elementsNeedUpdate = true;
+World.prototype.setSunPosition = function(__date) {
+	if (this.get('light')) {
+	    var date = new Date(__date);
+	    var d = helper.dayOfTheYear(date);
+	    var dayOfTheYear = (d - 91 + 365) % 365;
+	    var l = 1800;
+	    var seasons = [{
+	        limit: [0, 91],
+	        angle: [0, l],
+	        id: 'A'
+	    }, {
+	        limit: [92, 172],
+	        angle: [l, 0],
+	        id: 'B'
+	    }, {
+	        limit: [173, 266],
+	        angle: [0, -l],
+	        id: 'C'
+	    }, {
+	        limit: [266, 365],
+	        angle: [-l, 0],
+	        id: 'D'
+	    }];
+	    var tilt = 0;
+	    for (var i = 0; i < seasons.length; i++) {
+	        var limit = seasons[i].limit;
+	        var angle = seasons[i].angle;
+	        if (dayOfTheYear >= limit[0] && dayOfTheYear < limit[1]) {
+	            tilt = helper.interpolate(dayOfTheYear + (date.getHours() / 24), limit[0], limit[1], angle[0], angle[1]);
+	            console.info(seasons[i].id, d, dayOfTheYear, tilt.toFixed(0));
+	            break;
+	        }
+	    };
 
-	geo.computeVertexNormals();
-	geo.computeFaceNormals();
-
-};
 
 
+	    var rev_degree = -(((__date / (1000 * 60 * 60)) + 6) % 24) * (360 / 24)
+	    var tilt_deg = tilt;
+
+
+	    this.get('light').position.set(Math.sin(rev_degree * Math.PI / 180) * 5000, tilt_deg, 5000 * Math.cos(rev_degree * Math.PI / 180));
+	    this.get('light').lookAt(0, 0, 0);
+	}
+}
+
+
+
+module.exports = WorldLoader;
 
 
 var onMouseMove = function(event) {
@@ -99,7 +106,7 @@ var onMouseMove = function(event) {
 	this.interceptor.mouse.y = - ( event.clientY / this.interceptor.renderer.domElement.clientHeight ) * 2 + 1;
 	this.interceptor.raycaster.setFromCamera( this.interceptor.mouse, this.interceptor.camera );
 	// See if the ray from the camera into the world hits one of our meshes
-	var intersects = this.interceptor.raycaster.intersectObject(  this.get('terrain') );
+	var intersects = this.interceptor.raycaster.intersectObject(  this.get('earth') );
 	// Toggle rotation bool for meshes that we clicked
 	if ( intersects.length > 0 ) {
 		//console.info(intersects[0]);
@@ -107,66 +114,6 @@ var onMouseMove = function(event) {
 	}else{
 		this.intersect = undefined;
 	}
-
-
-};
-
-var worldWidth = 256;
-var worldDepth = 256;
-World.prototype.getTerrainGeometry = function(data) {
-	if (!this.geometry){		
-		var geometry = new THREE.PlaneGeometry( 256000, 256000, worldWidth - 1, worldDepth - 1 );
-		geometry.rotateX( - Math.PI / 2 );
-		var vertices = geometry.attributes ? geometry.attributes.position.array : geometry.vertices;	
-		if (geometry.attributes ){ //NOT THIS ONE
-			for ( var i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
-				vertices[ j + 1 ] = data[ i ] ;
-			}
-		}else{//THIS ONE
-			for (var i = 0; i < vertices.length; i++) {
-				vertices[i].y=(data[i]*160) ;
-			};
-		}
-		/**/		
-		geometry.computeFaceNormals();
-		geometry.dynamic = true;
-		this.geometry = geometry;
-	}
-	return this.geometry;
-}
-
-
-
-function createShaderMaterial(id, light) {
-	var shader = THREE.ShaderTypes[id];
-	var u = THREE.UniformsUtils.clone(shader.uniforms);
-	var vs = shader.vertexShader;
-	var fs = shader.fragmentShader;
-	var material = new THREE.ShaderMaterial({ uniforms: u, vertexShader: vs, fragmentShader: fs });
-	material.uniforms.uDirLightPos.value = light.position;
-	material.uniforms.uDirLightColor.value = light.color;
-	return material;
-}
-World.prototype.getTerrainMaterial = function(data) {
-	// MATERIALS
-	var materialColor = new THREE.Color();
-	materialColor.setRGB(1.0, 0.8, 0.6);
-	var phongMaterial = createShaderMaterial("phongDiffuse", this.get('light'));
-	phongMaterial.uniforms.uMaterialColor.value.copy(materialColor);
-	phongMaterial.side = THREE.DoubleSide;
-
-	return phongMaterial;
-}
-
-World.prototype.getTerrain = function() {
-	var data = generateHeight( worldWidth, worldDepth );
-	var mesh = new THREE.Mesh( this.getTerrainGeometry(data), this.getTerrainMaterial(data));
-	this.terrainData = data;
-	return mesh;
-};
-
-World.prototype.updateTerrain = function(data) {
-	this.geometry.verticesNeedUpdate = true;
 };
 
 function getHelper () {
@@ -175,73 +122,38 @@ function getHelper () {
 	geometry.rotateX( Math.PI / 2 );
 	return new THREE.Mesh( geometry, new THREE.MeshNormalMaterial() );
 }
-
-
-function generateHeight( width, height ) {
-	var size = width * height, data = new Uint8Array( size ),
-	perlin = new ImprovedNoise(), quality = 1, z = Math.random() * 100;
-	for ( var j = 0; j < 4; j ++ ) {
-		for ( var i = 0; i < size; i ++ ) {
-			var x = i % width, y = ~~ ( i / width );
-			data[ i ] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality * 1.75 );
-		}
-		quality *= 5;
-	}
-	return data;
+function getLight () {
+	var light = new THREE.DirectionalLight(0xffffff, 1.0);
+	light.position.set(5000, 0, 5000);
+	return light;
 }
-function generateTexture( data, width, height ) {
-	var canvas, canvasScaled, context, image, imageData,
-	level, diff, vector3, sun, shade;
-	vector3 = new THREE.Vector3( 0, 0, 0 );
-	sun = new THREE.Vector3( 1, 1, 1 );
-	sun.normalize();
-	canvas = document.createElement( 'canvas' );
-	canvas.width = width;
-	canvas.height = height;
-	context = canvas.getContext( '2d' );
-	context.fillStyle = '#000';
-	context.fillRect( 0, 0, width, height );
-	image = context.getImageData( 0, 0, canvas.width, canvas.height );
-	imageData = image.data;
-	for ( var i = 0, j = 0, l = imageData.length; i < l; i += 4, j ++ ) {
-		vector3.x = data[ j - 2 ] - data[ j + 2 ];
-		vector3.y = 2;
-		vector3.z = data[ j - width * 2 ] - data[ j + width * 2 ];
-		vector3.normalize();
-		shade = vector3.dot( sun );
-		imageData[ i ] = ( 128 + shade * 96 ) * ( 0.5 + data[ j ] * 0.007 );
-		imageData[ i + 1 ] = ( 45 + shade * 96 ) * ( 0.5 + data[ j ] * 0.007 );
-		imageData[ i + 2 ] = ( shade * 96 ) * ( 0.5 + data[ j ] * 0.007 );
-	}
-	context.putImageData( image, 0, 0 );
-	// Scaled 4x
-	canvasScaled = document.createElement( 'canvas' );
-	canvasScaled.width = width * 4;
-	canvasScaled.height = height * 4;
-	context = canvasScaled.getContext( '2d' );
-	context.scale( 4, 4 );
-	context.drawImage( canvas, 0, 0 );
-	image = context.getImageData( 0, 0, canvasScaled.width, canvasScaled.height );
-	imageData = image.data;
-	for ( var i = 0, l = imageData.length; i < l; i += 4 ) {
-		var v = ~~ ( Math.random() * 5 );
-		imageData[ i ] += v;
-		imageData[ i + 1 ] += v;
-		imageData[ i + 2 ] += v;
-	}
-	context.putImageData( image, 0, 0 );
-	return canvasScaled;
+function getCity(lat,lng){
+	//var geometry =  THREE.SphereGeometry(100, 32, 32);
+	//var material = new THREE.MeshPhongMaterial({wireframe:true});
+	var mesh = new THREE.AxisHelper(500);
+	var v3 = getCoords(lat,lng);
+	mesh.position.set(v3.x,v3.y,v3.z);
+	return mesh;
 }
 
-module.exports = WorldLoader;
 
 
+function getEarth () {
+	return PlanetFactory.getEarth();
+}
 
 
+function getCoords (lat, lon) {
+	var radius = 5000;
+	var phi   = (90-lat)*(Math.PI/180);
+	var theta = (lon+180)*(Math.PI/180);
 
+	var x = -((radius) * Math.sin(phi)*Math.cos(theta));
+	var z = ((radius) * Math.sin(phi)*Math.sin(theta));
+	var y = ((radius) * Math.cos(phi));
 
-
-
+	return new THREE.Vector3(x,y,z);
+}
 
 
 

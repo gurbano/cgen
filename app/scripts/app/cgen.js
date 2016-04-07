@@ -19,41 +19,36 @@ var updateControlMap = function(delta, now){//UPDATE CONTROL MAP
 	keyMap.forEach(function (key) { //update keyboard
 		self.S.keys[key] = self.keyboard.pressed(key);
 	});	
-	//TODO: update mouse
 
 };
-var updatePlayer = function(delta, now){
-	var self = this;		
-	if ( this.PG.entity){
-		this.PG.entity.update(this.S.keys, delta, now);
-		this.PG.entity.position.y = this.world.getHeight(this.PG.entity.position.x, this.PG.entity.position.z) +10;
-	}
 
-};
-var updateCamera = function(delta, now){
-	var self = this;		
-	//console.info(this.S.controls.getObject().position);
-	if (this.S.camera && this.PG.entity)
-	{	
-		this.S.camera.position.x = this.PG.entity.position.x;
-		this.S.camera.position.y = this.PG.entity.position.y;
-		this.S.camera.position.z = this.PG.entity.position.z;
-		//this.S.camera.lookAt(this.world.get('helper').position);
-	}
-};
 
 var updateInterception = function(delta, now){
 	var self = this;		
 	if ( this.world && this.world.intersect ){
-		//console.info(this.world.intersect);
 		var helper = this.world.get('light');
 		helper.position.x = this.world.intersect.x;
-		helper.position.y = this.world.intersect.y+5000;
-		helper.position.z = this.world.intersect.z;
-		this.world.dig(this.world.intersect.obj);
+		helper.position.y = this.world.intersect.y;
+		helper.position.z = this.world.intersect.z;		
 	}
 };
 
+var d = new Date();
+function addDays(date, days) {
+    var result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
+var updateEarth = function(delta, now){
+	var self = this;		
+	if ( this.world){
+		var earth = this.world.get('earth');
+		earth.cloudsMesh.rotation.y  += 1/80 * delta;
+		//earth.rotation.y  += 1/20 * delta;
+		d = addDays(d,1);
+		//this.world.setSunPosition( d);
+	}
+};
 
 
 var CgenApp = function (opts) {
@@ -65,15 +60,12 @@ var CgenApp = function (opts) {
 	this.PG.store = new UserStore(opts.userId);
 	this.PG.entity = this.PG.store.get();
 
-	
-
 
 	//UPDATERS
 	this.updateFcts = [];		
-	this.updateFcts.push(updateControlMap);
-	//this.updateFcts.push(updatePlayer);
-	//this.updateFcts.push(updateCamera);
 	this.updateFcts.push(updateInterception);
+	this.updateFcts.push(updateControlMap);
+	this.updateFcts.push(updateEarth);
 
 
 	//Three related stuff
@@ -113,25 +105,14 @@ CgenApp.prototype.initHardware = function (opts) {
 	this.S.renderer.gammaOutput = true;
 
 	this.S.controls = new THREE.OrbitControls(this.S.camera, this.S.renderer.domElement);
+	this.S.controls.minPolarAngle = 1; // radians
+	this.S.controls.maxPolarAngle = 1.70; // radians
+	this.S.controls.minDistance = 15000;
+	this.S.controls.maxDistance =25000;
 	this.S.controls.addEventListener( 'change', function () {
-		console.info('controls');
+		
 	} );
-	/*this.S.controls = new THREE.FirstPersonControls(this.S.camera);
-    this.S.controls.lookSpeed = 0.1;
-    
-    this.S.controls.noFly = false;
-    this.S.controls.lookVertical = true;
-    this.S.controls.constrainVertical = false;
-    this.S.controls.verticalMin = 1.0;
-    this.S.controls.verticalMax = 2.0;
-    this.S.controls.lon = -150;
-    this.S.controls.lat = 120;
-	*/
-
-	
 	this.S.scene.add(this.S.camera);
-
-	
 	this.target.append(this.S.renderer.domElement);
 	return this;
 }
@@ -139,8 +120,6 @@ CgenApp.prototype.initWorld = function(opts) {
 	//WORLD	
 	this.world = new WorldLoader(this).init();
 	this.S.scene.add( this.world.getRoot());	
-	
-
 	return this;
 };
 CgenApp.prototype.start = function () {
@@ -148,7 +127,7 @@ CgenApp.prototype.start = function () {
 
 
 	this.S.camera.position.x = this.PG.entity.position.x;
-	this.S.camera.position.y = this.PG.entity.position.y;
+	this.S.camera.position.y = this.PG.entity.position.y+5000;
 	this.S.camera.position.z = this.PG.entity.position.z;
 
 
