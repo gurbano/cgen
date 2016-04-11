@@ -1,4 +1,5 @@
 var cgenApp = require('./app/cgen');
+var cities = require('./app/data/cities')
 
 
 /*MAIN ENTRY POINT FOR THE APP*/
@@ -16,5 +17,11 @@ $(document).ready(function () {
 		.initWorld({
 
 		})
+		.loadData({
+			data: cities
+		})
 		.start();
+
+
+
 });

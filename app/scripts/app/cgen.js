@@ -1,7 +1,6 @@
 var WorldLoader = require('./modules/WorldLoader');
 var UserStore = require('./modules/UserStore');
 
-
 var keyMap =['left', 'right', 'up', 'down'];
 var configuration = {
 	VIEW_ANGLE : 45,
@@ -78,6 +77,17 @@ var CgenApp = function (opts) {
 	
 
 }
+CgenApp.prototype.loadData = function(opts) {
+	var data = opts.data; //console.info(opts.data);
+	console.info(data[0]);
+	for (var i = 0; i < data.length; i++) {
+		var country = data[i];
+		this.world.add(country.name.common, this.world.getCity(country.latlng[0], country.latlng[1]));
+	};
+
+	return this;
+};
+
 CgenApp.prototype.hello = function(name) {
 	console.info("Hello " + this.PG.entity.userName);
 	return this;
@@ -124,15 +134,6 @@ CgenApp.prototype.initWorld = function(opts) {
 };
 CgenApp.prototype.start = function () {
 	console.info("Application started");
-
-
-	this.S.camera.position.x = this.PG.entity.position.x;
-	this.S.camera.position.y = this.PG.entity.position.y+5000;
-	this.S.camera.position.z = this.PG.entity.position.z;
-
-
-
-
 	this.loop();
 	return this;
 };

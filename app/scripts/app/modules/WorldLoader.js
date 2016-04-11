@@ -37,7 +37,7 @@ var World = function (app) {
 	this.add('helper', getHelper());
 	this.add('axisHelper', new THREE.AxisHelper( 5000 ) );	
 	this.add('earth', getEarth());
-	this.add('rome', getCity(41.890251, 12.492373));
+	//this.add('rome', getCity(41.890251, 12.492373));
 
 
 	document.addEventListener( 'mousemove', onMouseMove.bind(this), false);
@@ -95,12 +95,7 @@ World.prototype.setSunPosition = function(__date) {
 	    this.get('light').lookAt(0, 0, 0);
 	}
 }
-
-
-
 module.exports = WorldLoader;
-
-
 var onMouseMove = function(event) {
 	this.interceptor.mouse.x = ( event.clientX / this.interceptor.renderer.domElement.clientWidth ) * 2 - 1;
 	this.interceptor.mouse.y = - ( event.clientY / this.interceptor.renderer.domElement.clientHeight ) * 2 + 1;
@@ -127,10 +122,14 @@ function getLight () {
 	light.position.set(5000, 0, 5000);
 	return light;
 }
-function getCity(lat,lng){
-	//var geometry =  THREE.SphereGeometry(100, 32, 32);
-	//var material = new THREE.MeshPhongMaterial({wireframe:true});
-	var mesh = new THREE.AxisHelper(500);
+
+
+World.prototype.getCity = function(lat,lng){
+	var geometry = new THREE.SphereGeometry(100, 32, 32);
+
+	var mesh = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial());
+	
+
 	var v3 = getCoords(lat,lng);
 	mesh.position.set(v3.x,v3.y,v3.z);
 	return mesh;

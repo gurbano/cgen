@@ -42,7 +42,7 @@ gulp.task('scripts', () => {
     .bundle()
     .pipe(source(jsBundleFile))
     .pipe(buffer())
-    .pipe($.uglify())
+    //.pipe($.uglify())
     .pipe(gulp.dest('dist/scripts'));
 });
 
@@ -83,16 +83,16 @@ gulp.task('html', ['styles'], () => {
 
   return gulp.src('app/*.html')
     .pipe(assets)
-    .pipe($.if('*.js', $.uglify()))
-    .pipe($.if('*.css', $.minifyCss({
-      compatibility: '*'
-    })))
+    //.pipe($.if('*.js', $.uglify()))
+    //.pipe($.if('*.css', $.minifyCss({
+    //  compatibility: '*'
+    //})))
     .pipe(assets.restore())
     .pipe($.useref())
-    .pipe($.if('*.html', $.minifyHtml({
-      conditionals: true,
-      loose: true
-    })))
+    //.pipe($.if('*.html', $.minifyHtml({
+    //  conditionals: true,
+    //  loose: true
+    //})))
     .pipe(gulp.dest('dist'));
 });
 
@@ -113,18 +113,24 @@ gulp.task('images', () => {
       })))
     .pipe(gulp.dest('dist/images'));
 });
+gulp.task('audio', () => {
+  return gulp.src('app/audio/**/*')
+    .pipe($.if($.if.isFile, $.cache($.imagemin({
+        progressive: true,
+        interlaced: true,
+      }))
+      .on('error', function(err) {
+        console.log(err);
+        this.end();
+      })))
+    .pipe(gulp.dest('dist/audio'));
+});
 
 gulp.task('fonts', () => {
   return gulp.src('app/fonts/**/*')
     .pipe(gulp.dest('.tmp/fonts'))
     .pipe(gulp.dest('dist/fonts'));
 });
-gulp.task('audio', () => {
-  return gulp.src('app/audio/**/*')
-    .pipe(gulp.dest('.tmp/audio'))
-    .pipe(gulp.dest('dist/audio'));
-});
-
 
 gulp.task('extras', () => {
   return gulp.src([
@@ -145,13 +151,15 @@ gulp.task('serve', ['styles','watchify', 'fonts'], () => {
       baseDir: ['.tmp', 'app'],
       routes: {
         '/bower_components': 'bower_components'
-      }
+      },
+      serveStatic: ['.', 'app/audio']
     }
   });
 
   gulp.watch([
     'app/*.html',
     'app/images/**/*',
+    'app/audio/**/*',
     '.tmp/fonts/**/*'
   ]).on('change', reload);
 
