@@ -92,7 +92,7 @@ THREEx.KeyboardState.ALIAS	= {
 THREEx.KeyboardState.prototype._onKeyChange	= function(event)
 {
 	// log to debug
-	//console.log("onKeyChange", event, event.keyCode, event.shiftKey, event.ctrlKey, event.altKey, event.metaKey)
+	console.log("onKeyChange", event, event.keyCode, event.shiftKey, event.ctrlKey, event.altKey, event.metaKey)
 
 	// update this.keyCodes
 	var keyCode		= event.keyCode
@@ -103,6 +103,7 @@ THREEx.KeyboardState.prototype._onKeyChange	= function(event)
 	this.modifiers['ctrl']	= event.ctrlKey
 	this.modifiers['alt']	= event.altKey
 	this.modifiers['meta']	= event.metaKey
+	
 }
 
 /**

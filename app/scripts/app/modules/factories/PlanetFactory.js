@@ -40,7 +40,7 @@ PlanetFactory.prototype.getEarth = function() {
 };
 PlanetFactory.prototype.getPlanet = function(name) {
 	var geometry = this.getPlanetGeometry(conf[name]);
-	var material = this.getPlanetMaterial(conf[name], "4k");
+	var material = this.getPlanetMaterial(conf[name], "10k");
 	var planetMesh = this.getPlanetMesh(geometry, material);
 	planetMesh.castShadow = true;
     planetMesh.receiveShadow = true;

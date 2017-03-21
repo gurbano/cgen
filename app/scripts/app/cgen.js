@@ -18,6 +18,7 @@ var updateControlMap = function(delta, now){//UPDATE CONTROL MAP
 	keyMap.forEach(function (key) { //update keyboard
 		self.S.keys[key] = self.keyboard.pressed(key);
 	});	
+	//console.log(self.S.keys);
 
 };
 
@@ -45,7 +46,7 @@ var updateEarth = function(delta, now){
 		earth.cloudsMesh.rotation.y  += 1/80 * delta;
 		//earth.rotation.y  += 1/20 * delta;
 		d = addDays(d,1);
-		//this.world.setSunPosition( d);
+		this.world.setSunPosition( d);
 	}
 };
 
@@ -62,7 +63,7 @@ var CgenApp = function (opts) {
 
 	//UPDATERS
 	this.updateFcts = [];		
-	this.updateFcts.push(updateInterception);
+	//this.updateFcts.push(updateInterception);
 	this.updateFcts.push(updateControlMap);
 	this.updateFcts.push(updateEarth);
 
@@ -117,7 +118,7 @@ CgenApp.prototype.initHardware = function (opts) {
 	this.S.controls = new THREE.OrbitControls(this.S.camera, this.S.renderer.domElement);
 	this.S.controls.minPolarAngle = 1; // radians
 	this.S.controls.maxPolarAngle = 1.70; // radians
-	this.S.controls.minDistance = 15000;
+	this.S.controls.minDistance = 7500;
 	this.S.controls.maxDistance =25000;
 	this.S.controls.addEventListener( 'change', function () {
 		
@@ -144,7 +145,6 @@ CgenApp.prototype.queryControls = function(key){
 CgenApp.prototype.loop = function() {
 	var self = this;
 	var lastTimeMsec= null
-	
 	function animate(nowMsec){
 		//nowMsec = nowMsec.toFixed(0);
 		//console.info('looping ' + nowMsec);		

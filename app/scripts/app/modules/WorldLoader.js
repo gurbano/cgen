@@ -59,19 +59,19 @@ World.prototype.setSunPosition = function(__date) {
 	    var l = 1800;
 	    var seasons = [{
 	        limit: [0, 91],
-	        angle: [0, l],
+	        angle: [-l, l],
 	        id: 'A'
 	    }, {
 	        limit: [92, 172],
-	        angle: [l, 0],
+	        angle: [l, -l],
 	        id: 'B'
 	    }, {
 	        limit: [173, 266],
-	        angle: [0, -l],
+	        angle: [-l, l],
 	        id: 'C'
 	    }, {
 	        limit: [266, 365],
-	        angle: [-l, 0],
+	        angle: [l, -l],
 	        id: 'D'
 	    }];
 	    var tilt = 0;
@@ -80,7 +80,7 @@ World.prototype.setSunPosition = function(__date) {
 	        var angle = seasons[i].angle;
 	        if (dayOfTheYear >= limit[0] && dayOfTheYear < limit[1]) {
 	            tilt = helper.interpolate(dayOfTheYear + (date.getHours() / 24), limit[0], limit[1], angle[0], angle[1]);
-	            console.info(seasons[i].id, d, dayOfTheYear, tilt.toFixed(0));
+	            console.info(date,seasons[i].id, d, dayOfTheYear, tilt.toFixed(0));
 	            break;
 	        }
 	    };
@@ -91,8 +91,8 @@ World.prototype.setSunPosition = function(__date) {
 	    var tilt_deg = tilt;
 
 
-	    this.get('light').position.set(Math.sin(rev_degree * Math.PI / 180) * 5000, tilt_deg, 5000 * Math.cos(rev_degree * Math.PI / 180));
-	    this.get('light').lookAt(0, 0, 0);
+	    //this.get('light').position.set(Math.sin(rev_degree * Math.PI / 180) * 5000, tilt_deg, 5000 * Math.cos(rev_degree * Math.PI / 180));
+	    //this.get('light').lookAt(0, 0, 0);
 	}
 }
 module.exports = WorldLoader;

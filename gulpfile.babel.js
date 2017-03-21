@@ -158,6 +158,7 @@ gulp.task('serve', ['styles','watchify', 'fonts'], () => {
 
   gulp.watch([
     'app/*.html',
+    'app/**/*.js',
     'app/images/**/*',
     'app/audio/**/*',
     '.tmp/fonts/**/*'
